@@ -1,8 +1,12 @@
 package rewards.internal.restaurant;
 
 import common.money.Percentage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.stereotype.Repository;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -43,7 +47,7 @@ import java.util.Map;
  *   understand why. (If not, refer to lab document).
  *   We will fix this error in the next step.
  */
-
+@Repository
 public class JdbcRestaurantRepository implements RestaurantRepository {
 
 	private DataSource dataSource;
@@ -60,14 +64,15 @@ public class JdbcRestaurantRepository implements RestaurantRepository {
 	 * Restaurant cache is populated for read only access
 	 */
 
+
 	public JdbcRestaurantRepository(DataSource dataSource) {
 		this.dataSource = dataSource;
-		this.populateRestaurantCache();
 	}
 
 	public JdbcRestaurantRepository() {
 	}
 
+	@Autowired
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
@@ -91,48 +96,22 @@ public class JdbcRestaurantRepository implements RestaurantRepository {
 	 *   construction activity, so using a post-construct, rather than
 	 *   the constructor, is a better practice.
 	 */
-
+	@PostConstruct
 	void populateRestaurantCache() {
-		restaurantCache = new HashMap<String, Restaurant>();
+		restaurantCache = new HashMap<>();
 		String sql = "select MERCHANT_NUMBER, NAME, BENEFIT_PERCENTAGE from T_RESTAURANT";
-		Connection conn = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			conn = dataSource.getConnection();
-			ps = conn.prepareStatement(sql);
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				Restaurant restaurant = mapRestaurant(rs);
-				// index the restaurant by its merchant number
-				restaurantCache.put(restaurant.getNumber(), restaurant);
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException("SQL exception occurred finding by merchant number", e);
-		} finally {
-			if (rs != null) {
-				try {
-					// Close to prevent database cursor exhaustion
-					rs.close();
-				} catch (SQLException ex) {
-				}
-			}
-			if (ps != null) {
-				try {
-					// Close to prevent database cursor exhaustion
-					ps.close();
-				} catch (SQLException ex) {
-				}
-			}
-			if (conn != null) {
-				try {
-					// Close to prevent database connection exhaustion
-					conn.close();
-				} catch (SQLException ex) {
-				}
-			}
-		}
-	}
+        try (Connection conn = dataSource.getConnection();
+			 PreparedStatement ps = conn.prepareStatement(sql);
+			 ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Restaurant restaurant = mapRestaurant(rs);
+                // index the restaurant by its merchant number
+                restaurantCache.put(restaurant.getNumber(), restaurant);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("SQL exception occurred finding by merchant number", e);
+        }
+    }
 
 	/**
 	 * Helper method that simply queries the cache of restaurants.
@@ -166,7 +145,9 @@ public class JdbcRestaurantRepository implements RestaurantRepository {
 	 * - Re-run the test and you should be able to see
 	 *   that this method is now being called.
 	 */
+	@PreDestroy
 	public void clearRestaurantCache() {
+		System.out.println("clearRestaurantCache invoked");
 		restaurantCache.clear();
 	}
 
