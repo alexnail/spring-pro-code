@@ -1,13 +1,13 @@
 package rewards;
 
-import javax.sql.DataSource;
-
+import config.AspectsConfig;
+import config.RewardsConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 
-import config.RewardsConfig;
+import javax.sql.DataSource;
 
 
 /** 
@@ -16,10 +16,9 @@ import config.RewardsConfig;
  * and you should see one line of LoggingAspect output in the console.	 
  */
 @Configuration
-@Import({RewardsConfig.class})
+@Import({RewardsConfig.class, AspectsConfig.class})
 public class SystemTestConfig {
 
-	
 	/**
 	 * Creates an in-memory "rewards" database populated 
 	 * with test data for fast testing
