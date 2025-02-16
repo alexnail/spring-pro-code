@@ -16,7 +16,9 @@ import javax.sql.DataSource;
 
 
 //	TODO-03: Add an annotation to enable Spring transaction
+// AFR - wondering why it should be enabled here and not in SystemTestConfig
 
+//@EnableTransactionManagement (enabled it in SystemTestConfig - closer to the TransactionManager bean declaration)
 @Configuration
 public class RewardsConfig {
 
