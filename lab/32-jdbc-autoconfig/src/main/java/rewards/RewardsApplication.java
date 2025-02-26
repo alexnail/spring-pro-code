@@ -1,8 +1,15 @@
 package rewards;
 
+import config.RewardsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 // TODO-00 : In this lab, you are going to exercise the following:
 // - Understanding how auto-configuration is triggered in Spring Boot application
@@ -22,8 +29,7 @@ import org.springframework.boot.SpringApplication;
 // --------------------------------------------
 
 // TODO-11 (Optional) : Disable 'DataSource' auto-configuration
-// - Note that you are using your own 'DataSource' bean now
-//   instead of auto-configured one
+// - Note that you are using your own 'DataSource' bean now instead of auto-configured one
 // - Use 'exclude' attribute of '@SpringBootApplication'
 //   excluding 'DataSourceAutoConfiguration' class
 // - Run this application and observe a failure
@@ -35,11 +41,12 @@ import org.springframework.boot.SpringApplication;
 // TODO-13 (Optional) : Follow the instruction in the lab document.
 //           The section titled "Build and Run using Command Line tools".
 
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@Import({RewardsConfig.class})
 public class RewardsApplication {
     static final String SQL = "SELECT count(*) FROM T_ACCOUNT";
 
-    final Logger logger
-            = LoggerFactory.getLogger(RewardsApplication.class);
+    final Logger logger = LoggerFactory.getLogger(RewardsApplication.class);
 
     public static void main(String[] args) {
         SpringApplication.run(RewardsApplication.class, args);
@@ -56,6 +63,20 @@ public class RewardsApplication {
     // - Use the JdbcTemplate bean that Spring Boot auto-configured for you
     // - Run this application and verify "Hello, there are 21 accounts" log message
     //   gets displayed in the console
+    @Bean
+    CommandLineRunner jdbcRunner(JdbcTemplate jdbcTemplate) {
+        return args -> {
+            var count = jdbcTemplate.queryForObject(SQL, Integer.class);
+            logger.info("Hello, there are {} accounts", count);
+        };
+    }
+
+    @Bean
+    CommandLineRunner initDatabase(RewardsRecipientProperties recipientProperties) {
+        return args -> {
+            logger.info("Recipient: {}", recipientProperties.getName());
+        };
+    }
 
     // TODO-07 (Optional): Enable full debugging in order to observe how Spring Boot
     //           performs its auto-configuration logic
